@@ -1,0 +1,60 @@
+# ==========================================
+# ENVIRONNEMENT PYTHON
+# ==========================================
+
+.venv/
+venv/
+env/
+
+# ==========================================
+# FICHIERS TEMPORAIRES PYTHON
+# ==========================================
+
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ==========================================
+# DONNÉES DU PROJET
+# ==========================================
+
+# Données originales
+data/raw/
+
+# Données transformées
+data/processed/
+
+# Données finales
+data/final/
+
+# ==========================================
+# RÉSULTATS GÉNÉRÉS
+# ==========================================
+
+results/models/*
+results/figures/*
+results/metrics/*
+
+# Conserver les dossiers dans Git
+!results/models/.gitkeep
+!results/figures/.gitkeep
+!results/metrics/.gitkeep
+
+# ==========================================
+# FICHIERS DU SYSTÈME
+# ==========================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# FICHIERS DE CONFIGURATION LOCAUX
+# ==========================================
+
+.env
+.vscode/
+.idea/
+*.log
