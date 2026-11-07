@@ -20,8 +20,8 @@ __pycache__/
 # DONNÉES DU PROJET
 # ==========================================
 
-# Données originales
-data/raw/
+# Données originales volumineuses
+# Ne pas ignorer data/raw/
 
 # Données transformées volumineuses à ignorer
 data/processed/gene_expression.csv
