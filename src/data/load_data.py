@@ -13,9 +13,6 @@ Résultats :
     - gene_expression.csv
     - clinical_data.csv
 
-Remarque :
-    Aucune opération de nettoyage ou de preprocessing
-    n'est effectuée dans ce module.
 """
 
 import zipfile
