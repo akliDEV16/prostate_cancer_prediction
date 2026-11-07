@@ -20,15 +20,16 @@ __pycache__/
 # DONNÉES DU PROJET
 # ==========================================
 
-# Données originales
-data/raw/
+# Données originales volumineuses
+# Ne pas ignorer data/raw/
 
-# Données transformées
-data/processed/
+# Données transformées volumineuses à ignorer
+data/processed/gene_expression.csv
+data/processed/gene_expression_clean.csv
+data/processed/merged_data.csv
 
 # Données finales
 data/final/
-
 # ==========================================
 # RÉSULTATS GÉNÉRÉS
 # ==========================================
@@ -58,3 +59,9 @@ desktop.ini
 .vscode/
 .idea/
 *.log
+
+
+git add data/processed/X.csv
+git add data/processed/y.csv
+git add data/processed/patient_ids.csv
+git add data/processed/feature_names.json
