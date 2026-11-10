@@ -1,0 +1,5 @@
+Model,CV_balanced_accuracy,anova__k,clf__C,clf__min_samples_leaf
+Logistic,0.43408225108225107,1000,0.001,
+SVM_lineaire,0.4307893772893773,1000,0.001,
+Random_Forest,0.34122902097902097,1000,,3.0
+LDA_shrinkage,0.31149866799866804,500,,

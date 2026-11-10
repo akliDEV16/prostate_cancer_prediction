@@ -1,14 +1,13 @@
 """
-Entraînement du modèle de prédiction du cancer de la prostate.
+Entraînement de 4 modèles de prédiction du cancer de la prostate.
 
 Pipeline :
 1. Imputation des valeurs manquantes.
-2. Sélection des gènes avec ANOVA.
-3. Normalisation des données.
-4. Rééquilibrage des classes avec SMOTE-ENN.
-5. Réduction de dimension avec LDA.
-6. Classification avec SVM.
-7. Sauvegarde du modèle.
+2. Suppression des caractéristiques constantes.
+3. Sélection des gènes avec ANOVA.
+4. Normalisation des données.
+5. Classification avec 4 algorithmes.
+6. Sauvegarde des modèles.
 """
 
 import pandas as pd
@@ -16,15 +15,19 @@ import joblib
 
 from pathlib import Path
 
-from sklearn.svm import SVC
-from imblearn.pipeline import Pipeline
-from imblearn.combine import SMOTEENN
-from imblearn.over_sampling import SMOTE
-
-from src.features.imputation import make_imputer
-from src.features.scaling import make_scaler
-from src.features.dimensionality_reduction import make_lda
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
+from sklearn.preprocessing import MinMaxScaler
+
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import FunctionTransformer, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from src.features.log_transform import log2p, keep_genes
+
 
 # ==========================================
 # CHEMINS
@@ -37,22 +40,20 @@ MODEL_DIR = ROOT_DIR / "models"
 
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL_PATH = MODEL_DIR / "prostate_cancer_model.pkl"
-
 
 # ==========================================
-# CHARGEMENT DES DONNÉES
+# CHARGEMENT DES DONNEES
 # ==========================================
 
 def load_training_data():
 
-    print("Chargement des données d'entraînement...")
+    print("Chargement des données...")
 
     X_train = pd.read_csv(TRAIN_DIR / "X_train.csv")
     y_train = pd.read_csv(TRAIN_DIR / "y_train.csv").iloc[:, 0]
 
-    print("Dimensions de X_train :", X_train.shape)
-    print("Dimensions de y_train :", y_train.shape)
+    print("Dimensions X_train :", X_train.shape)
+    print("Dimensions y_train :", y_train.shape)
 
     print("\nRépartition des classes :")
     print(y_train.value_counts().sort_index())
@@ -61,87 +62,97 @@ def load_training_data():
 
 
 # ==========================================
-# CONSTRUCTION DU PIPELINE
+# CONSTRUCTION DES MODELES
 # ==========================================
 
-def build_pipeline(y_train):
+def build_models():
 
-    # Nombre d'échantillons dans la classe minoritaire
-    min_class_count = y_train.value_counts().min()
+    models = {
 
-    if min_class_count < 2:
-        raise ValueError(
-            "SMOTE nécessite au moins deux échantillons "
-            "dans chaque classe."
-        )
+        # 1. SVM
+        "SVM": Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("variance", VarianceThreshold()),
+            ("anova", SelectKBest(score_func=f_classif, k=10000)),
+            ("scaling", MinMaxScaler()),
+            ("classifier", SVC(
+                kernel="linear",
+                C=1.0,
+                class_weight="balanced",
+                random_state=42
+            ))
+        ]),
 
-    k_neighbors = min(5, min_class_count - 1)
+        # 2. NAIVE BAYES
+        "Naive_Bayes": Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("variance", VarianceThreshold()),
+            ("anova", SelectKBest(score_func=f_classif, k=10000)),
+            ("scaling", MinMaxScaler()),
+            ("classifier", GaussianNB())
+        ]),
 
+        # 3. KNN
+        "KNN": Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("variance", VarianceThreshold()),
+            ("anova", SelectKBest(score_func=f_classif, k=10000)),
+            ("scaling", MinMaxScaler()),
+            ("classifier", KNeighborsClassifier(
+                n_neighbors=5,
+                weights="distance"
+            ))
+        ]),
 
-    pipeline = Pipeline([
+        # 4. RANDOM FOREST
+        "Random_Forest": Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("variance", VarianceThreshold()),
+            ("anova", SelectKBest(score_func=f_classif, k=10000)),
+            ("classifier", RandomForestClassifier(
+                n_estimators=200,
+                class_weight="balanced",
+                random_state=42,
+                n_jobs=-1
+            ))
+        ])
 
-        # 1. Imputation des valeurs manquantes
-        ("imputer", make_imputer()),
+    }
 
-        # 2. Suppression des gènes constants
-        ("variance", VarianceThreshold(threshold=0)),
-
-        # 3. Sélection des 500 meilleurs gènes
-        ("anova", SelectKBest(
-            score_func=f_classif,
-            k=300
-        )),
-
-        # 4. Normalisation
-        ("scaling", make_scaler()),
-
-        # 5. Rééquilibrage des classes
-
-        # 6. Réduction de dimension avec LDA
-
-        # 7. Classification avec SVM
-        ("classifier", SVC(
-            kernel="linear",
-            C=1.0,
-            gamma="scale",
-            class_weight="balanced",
-            random_state=42
-        ))
-    ])
-
-    return pipeline
+    return models
 
 
 # ==========================================
-# ENTRAÎNEMENT
+# ENTRAINEMENT
 # ==========================================
 
-def train_model():
+def train_models():
 
     X_train, y_train = load_training_data()
 
-    print("\nConstruction du pipeline...")
+    models = build_models()
 
-    model = build_pipeline(y_train)
+    for name, model in models.items():
 
-    print("\nDébut de l'entraînement...")
+        print("\n====================================")
+        print("ENTRAINEMENT :", name)
+        print("====================================")
 
-    model.fit(X_train, y_train)
+        model.fit(X_train, y_train)
 
-    print("\nEntraînement terminé.")
+        model_path = MODEL_DIR / f"{name}.pkl"
 
-    # Sauvegarde du modèle
-    joblib.dump(model, MODEL_PATH)
+        joblib.dump(model, model_path)
 
-    print("\nModèle sauvegardé :", MODEL_PATH)
+        print("Entraînement terminé.")
+        print("Modèle sauvegardé :", model_path)
 
-    return model
+    print("\nTous les modèles ont été entraînés.")
 
 
 # ==========================================
-# EXÉCUTION PRINCIPALE
+# EXECUTION
 # ==========================================
 
 if __name__ == "__main__":
-
-    train_model()
+    train_models()

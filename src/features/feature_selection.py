@@ -29,7 +29,7 @@ from src.features.imputation import make_imputer
 # SELECTION ANOVA
 # ==========================================
 
-def make_anova(k=300):
+def make_anova(k=10000):
     """
     Sélectionne les k gènes les plus pertinents avec ANOVA.
 
@@ -47,7 +47,7 @@ def make_anova(k=300):
 # SELECTION RANDOM FOREST
 # ==========================================
 
-def make_rf_selector(k=300, n_estimators=200, random_state=42):
+def make_rf_selector(k=10000, n_estimators=200, random_state=42):
     """
     Sélectionne les gènes les plus importants avec Random Forest.
     """
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     anova_pipeline = Pipeline([
         ("imputer", make_imputer()),
-        ("selector", make_anova(k=300))
+        ("selector", make_anova(k=10000))
     ])
 
     X_anova = anova_pipeline.fit_transform(X, y)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     rf_pipeline = Pipeline([
         ("imputer", make_imputer()),
-        ("selector", make_rf_selector(k=300))
+        ("selector", make_rf_selector(k=10000))
     ])
 
     X_rf = rf_pipeline.fit_transform(X, y)
